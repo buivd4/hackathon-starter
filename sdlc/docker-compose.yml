@@ -1,0 +1,105 @@
+version: '3'
+
+networks:
+  shared:
+    driver: bridge
+
+volumes:
+  gogs-data:
+  docker-registry:
+
+services:
+  gogs:
+    build: ./gogs
+    ports:
+      - 3000:3000
+    networks:
+      - shared
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - gogs-data:/data
+
+  jenkins-controller:
+    build: ./jenkins
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dpermissive-script-security.enabled=true
+      - JENKINS_ADMIN_ID=admin
+      - JENKINS_ADMIN_PASSWORD=pass
+      - CASC_JENKINS_CONFIG=/var/jenkins_conf/jenkins.yaml
+      - JENKINS_URL=127.0.0.1:80
+      - JENKINS_AGENT_HOST=jenkins-agent
+      - JENKINS_AGENT_PORT=22
+      - |
+        JENKINS_AGENT_SSH_PRIVATE_KEY=
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        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
+        -----END OPENSSH PRIVATE KEY----- 
+    ports:
+      - 80:8080
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:8080 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    networks:
+      - shared
+
+  jenkins-agent:
+    build: ./jenkins-agent
+    environment:
+      - JENKINS_AGENT_SSH_PUBKEY=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCqXg6FqNTxpg789bmBrpY8Nuan1kUozvVe97D2hsux/A6FBEubSuaD0PNqLIymuIg52bFuNLImfpNmSHioDWyyAfLc7H9dg0wTsADUY+cvRgx1sySYPddv1YxAlrWoAU6a3ZE0bXl0taMhUoKblyayG/eYm8VrNWZiwEzeiykAx0nbICJ6dELmyPDg0faixGVgMh3bJJahh8EEKXwiAcxo2Aox4DtbMCM5caFXvWlxpI0Zj8ijfMn4RQxfODiwgWi0aQxaXEVB2zXAaMa6+cXgHji5L1zm/geyh6rdw2IlvQzY0G/rPmjTY73Kgfmk7RmsXHNDQ38sbhaCI+MQ3K9n3ExEs5qgJxq1900ucwDEuXZVy6hxkYSrEP8Et8Q4EP3gfixLNsevmaZB6a1FEl4qtrhBbZ+L16RF/nM+M19GbWYCQD6OyLwDCfE+8wOJwzuB12Bq3bsirrplQI73CLRJbbhQpe/7+6Fckv5SD52359OKTbPEstcT0+cv9D0TFh8= jenkins-agent
+      - JENKINS_AGENT_HOME=/root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /tmp/jupiter:/tmp/jupiter:rw
+    networks:
+      - shared
+  
+  local_registry:
+    image: registry:2
+    ports:
+    - "5001:5000"
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+    volumes:
+      - docker-registry:/data
+  

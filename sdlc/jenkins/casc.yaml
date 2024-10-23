@@ -1,0 +1,71 @@
+jenkins:
+  systemMessage: "Jenkins configured automatically by Jenkins Configuration as Code plugin\n\n"
+  numExecutors: 0
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+       - id: ${JENKINS_ADMIN_ID}
+         password: ${JENKINS_ADMIN_PASSWORD}
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+# Without the Agent to Controller Security Subsystem, the agent is able to instruct
+# the controller to execute any actions it requests, which may be undesirable.
+  remotingSecurity:
+    enabled: true
+#  jobs should be ran using the same Jenkins user that configured or triggered it.
+  nodes:
+    - permanent:
+        labelString: "docker"
+        mode: NORMAL
+        name: "agent-1"
+        remoteFS: "/root"
+        # remoteFS: "/var/lib/jenkins"
+        launcher:
+          SSH:
+            host: ${JENKINS_AGENT_HOST}
+            port: ${JENKINS_AGENT_PORT}
+            credentialsId: agent_ssh_key
+            launchTimeoutSeconds: 60
+            maxNumRetries: 3
+            retryWaitTime: 30
+            sshHostKeyVerificationStrategy: "nonVerifyingKeyVerificationStrategy"
+
+security:
+  queueItemAuthenticator:
+    authenticators:
+    - global:
+        strategy: triggeringUsersAuthorizationStrategy
+  globalJobDslSecurityConfiguration:
+    useScriptSecurity: false
+
+unclassified:
+  location:
+    url: ${JENKINS_URL}
+
+jobs:
+  - script: >
+      folder('duong.buivan')
+  - file: /var/jobdsl/jupiter.groovy
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              id: "gogs_int"
+              password: "${GOGS_JENKINS_USER}"
+              scope: GLOBAL
+              username: "jenkins"
+              usernameSecret: true
+          - basicSSHUserPrivateKey:
+              scope: SYSTEM
+              id: agent_ssh_key
+              username: root
+              description: "SSH private key file for agent node"
+              privateKeySource:
+                directEntry:
+                  privateKey: ${JENKINS_AGENT_SSH_PRIVATE_KEY}
